@@ -11,7 +11,6 @@ from torchvision import datasets, models, transforms
 import torch.nn.functional as F
 import torchvision.datasets as dset
 import matplotlib.pyplot as plt
-import time
 import os
 import copy
 
