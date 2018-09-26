@@ -6,7 +6,7 @@ For that reason, we decided to make a model that can distinguish 4 different typ
 
 My team consist of four people, and each of them made their own model.
 
-I used pretrained VGG16 to classify ramens.
+I made my model using pretrained VGG16 to classify ramens.
 
 # Experiments 
 
