@@ -1,8 +1,8 @@
 # Basic_Classification
 
-During summer in 2018, I had study with people from Kwangwoon University. We watched Deep Learning lectures from youtube by hunkim. During hunkim's lectures, images that we used were mnist. To use the mnist, all we had to do was loading. So we didn't have chance to learn how to load images that we took with our phones.
+During summer in 2018, I had study with people from Kwangwoon University. We watched Deep Learning lectures from youtube by hunkim. During hunkim's lectures, images that we used were mnist. To use the mnist, all we had to do was  just loading. So we didn't have chance to learn how to load images that we took with our phones.
 
-For that reason, we decided to make a model that distinguish 4 different types of ramens. In this basic_classification project, our goal was not on making unique and outstanding model. We focused on making our own training datas and using them.
+For that reason, we decided to make a model that can distinguish 4 different types of ramens. In this basic_classification project, our goal was not on making unique and outstanding model. We focused on making our own training datas and using them.
 
 My team consist of four people, and each of them made their own model.
 
