@@ -12,5 +12,4 @@ There are four different types of ramens and each was labeled as below.
 >3. 무파마(Spicy Vegetable Noodle Soup)  
 <p align="center"><img width="150" alt="3" src="https://user-images.githubusercontent.com/42035101/147291989-f36101a2-167b-4be1-80b3-a91fcc6f8246.png"></p>  
 
-We took 200 pictures of each ramen and divided 40 of them as test set by using split_data.py which was created by yanghoJI.
-So we trained 160 pictures for each ramen, and the remaining were used for the test.
+After collecting 200 pictures of each label from various environments, we randomly chose 25 of them as our test set. The code for splitting the dataset can be found at split_data.py, which was created by yanhoJI. We used 175 pictures of each label and 25 pictures of each class for testing for training.
