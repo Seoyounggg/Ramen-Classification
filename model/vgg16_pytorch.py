@@ -5,40 +5,32 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.optim import lr_scheduler
 from torch.autograd import Variable
-import numpy as np
-import torchvision
-from torchvision import datasets, models, transforms
-import torch.nn.functional as F
+from torchvision import models, transforms
 import torchvision.datasets as dset
-import matplotlib.pyplot as plt
-import os
 import copy
 
-use_gpu = torch.cuda.is_available()
-if use_gpu:
-    print("Using CUDA")
-
-
 # device check
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print('runing device : {}'.format(device))
-
+device = torch.device("cpu")
+print('running device : {}'.format(device))
 
 # Training settings
-batch_size = 64
+batch_size = 8
 
+train_set = dset.ImageFolder(root='../dataset/train', transform=transforms.Compose([
+    transforms.RandomResizedCrop(224),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor()
+]))
 
-train_set = dset.ImageFolder(root='../dataset/train',transform = transforms.Compose([
-                                transforms.RandomResizedCrop(224),
-                                transforms.RandomHorizontalFlip(),
-                                transforms.ToTensor()
-                               ]))
+validation_set = dset.ImageFolder(root='../dataset/val', transform=transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor()]))
 
-validation_set = dset.ImageFolder(root='../dataset/val',transform = transforms.Compose([
-                                transforms.Resize(256),
-                                transforms.CenterCrop(224),
-                                transforms.ToTensor()]))
-
+test_set = dset.ImageFolder(root='../dataset/test', transform=transforms.Compose([
+    transforms.Resize(256),
+    transforms.CenterCrop(224),
+    transforms.ToTensor()]))
 
 # Data Loader (Input Pipeline)
 train_loader = torch.utils.data.DataLoader(dataset=train_set,
@@ -46,88 +38,172 @@ train_loader = torch.utils.data.DataLoader(dataset=train_set,
                                            shuffle=True)
 
 validation_loader = torch.utils.data.DataLoader(dataset=validation_set,
-                                          batch_size=batch_size,
-                                          shuffle=False)
+                                                batch_size=batch_size,
+                                                shuffle=True)
 
+test_loader = torch.utils.data.DataLoader(dataset=test_set,
+                                          batch_size=batch_size,
+                                          shuffle=True)
 
 # Load the pretrained model from pytorch
-vgg16 = models.vgg16(pretrained=True)
-vgg16.load_state_dict(torch.load("./vgg16-397923af.pth"))
-print(vgg16.classifier[6].out_features) # 1000
-
-
-
+vgg16 = models.vgg16_bn()
+vgg16.load_state_dict(torch.load("../input/vgg16_bn.pth"))
 
 # Freeze training for all layers
 for param in vgg16.features.parameters():
     param.require_grad = False
 
-
 # Newly created modules have require_grad=True by default
 num_features = vgg16.classifier[6].in_features
-features = list(vgg16.classifier.children())[:-1] # Remove last layer
+features = list(vgg16.classifier.children())[:-1]  # Remove last layer
 features.extend([nn.Linear(num_features, 4)]) # Add our layer with 4 outputs
-features.extend([nn.LogSoftmax(1)])
-vgg16.classifier = nn.Sequential(*features) # Replace the model classifier
-
-
-
-# If you want to train the model for more than 2 epochs, set this to True after the first run
-resume_training = False
-
-if resume_training:
-    print("Loading pretrained model..")
-    vgg16.load_state_dict(torch.load('./vgg16-397923af.pth'))
-    print("Loaded!")
+vgg16.classifier = nn.Sequential(*features)  # Replace the model classifier
+print(vgg16)
 
 vgg16.to(device)
-
 criterion = nn.CrossEntropyLoss()
-
 optimizer_ft = optim.SGD(vgg16.parameters(), lr=0.001, momentum=0.9)
 exp_lr_scheduler = lr_scheduler.StepLR(optimizer_ft, step_size=7, gamma=0.1)
 
-def train(vgg, optimizer, num_epochs=10):
-    vgg.train()
-    for batch_idx, (data, target) in enumerate(train_loader):
-        data = data.to(device)
-        target = target.to(device)
-        optimizer.zero_grad()
-        output = vgg(data)
-        loss = F.nll_loss(output, target)
-        loss.backward()
-        optimizer.step()
-        if batch_idx % 10 == 0:
-            print('Train Epoch: {} [{}/{} ({:.0f}%)]\tLoss: {:.6f}'.format(
-                num_epochs, batch_idx * len(data), len(train_loader.dataset),
-                100. * batch_idx / len(train_loader), loss.data[0]))
+
+def eval_model(vgg, criterion):
+    loss_test = 0
+    acc_test = 0
+
+    test_batches = len(test_loader)
+    print("Evaluating model")
+    print('-' * 30)
+
+    for i, data in enumerate(test_loader):
+        if i % 5 == 0:
+            print("\rTest batch {}/{}".format(i, test_batches), end='')
+
+        vgg.train(False)
+        vgg.eval()
+        inputs, labels = data
+
+        with torch.no_grad():
+            inputs, labels = Variable(inputs), Variable(labels)
+        outputs = vgg(inputs)
+
+        _, preds = torch.max(outputs.data, 1)
+        loss = criterion(outputs, labels)
+
+        loss_test += loss.data
+        acc_test += torch.sum(preds == labels.data)
+
+        del inputs, labels, outputs, preds
+        torch.cuda.empty_cache()
+
+    avg_loss = loss_test / len(test_set)
+    avg_acc = acc_test / len(test_set)
+
+    print()
+    print('-' * 30)
+    print("Test results")
+    print("Avg loss (test): {:.4f}".format(avg_loss))
+    print("Avg acc (test): {:.4f}".format(avg_acc))
+    print('-' * 30)
 
 
-def test(vgg):
-    vgg.eval()
-    test_loss = 0
-    correct = 0
-    for data, target in validation_loader:
-        data = data.to(device)
-        target = target.to(device)
-        output = vgg(data)
-        # sum up batch loss
-        test_loss += F.nll_loss(output, target, size_average=False).data[0]
-        # get the index of the max log-probability
-        pred = output.data.max(1, keepdim=True)[1]
-        correct += pred.eq(target.data.view_as(pred)).cpu().sum()
+def train_model(vgg, criterion, optimizer, scheduler, num_epochs=2):
+    best_model_wts = copy.deepcopy(vgg.state_dict())
+    best_acc = 0.0
 
-    test_loss /= len(validation_loader.dataset)
-    print('\nTest set: Average loss: {:.4f}, Accuracy: {}/{} ({:.0f}%)\n'.format(
-        test_loss, correct, len(validation_loader.dataset),
-        100. * correct / len(validation_loader.dataset)))
-    return correct
+    train_batches = len(train_loader)
+    val_batches = len(validation_loader)
+
+    for epoch in range(num_epochs):
+        print("Epoch {}/{}".format(epoch + 1, num_epochs))
+        print('-' * 30)
+
+        loss_train = 0
+        loss_val = 0
+        acc_train = 0
+        acc_val = 0
+
+        vgg.train(True)
+
+        for i, data in enumerate(train_loader):
+            if i % 5 == 0:
+                print("\rTraining batch {}/{}".format(i, train_batches), end='')
+
+            inputs, labels = data
+            with torch.no_grad():
+                inputs, labels = Variable(inputs), Variable(labels)
+            optimizer.zero_grad()
+
+            outputs = vgg(inputs)
+            _, preds = torch.max(outputs.data, 1)
+            loss = criterion(outputs, labels)
+            loss.backward()
+            optimizer.step()
+
+            loss_train += loss.data
+            acc_train += torch.sum(preds == labels.data)
+
+            del inputs, labels, outputs, preds
+            torch.cuda.empty_cache()
+
+        avg_loss = loss_train / len(train_set)
+        avg_acc = acc_train / len(train_set)
+
+        vgg.train(False)
+        vgg.eval()
+
+        print()
+        print("Epoch {} result: ".format(epoch))
+        print("Avg loss (train): {:.4f}".format(avg_loss))
+        print("Avg acc (train): {:.4f}".format(avg_acc))
+        print('-' * 30)
+        print()
+
+        for i, data in enumerate(validation_loader):
+            if i % 5 == 0:
+                print("\rValidation batch {}/{}".format(i, val_batches), end='', flush=True)
+
+            inputs, labels = data
+
+            with torch.no_grad():
+                inputs, labels = Variable(inputs), Variable(labels)
+
+            optimizer.zero_grad()
+            outputs = vgg(inputs)
+
+            _, preds = torch.max(outputs.data, 1)
+            loss = criterion(outputs, labels)
+
+            loss.backward()
+            optimizer.step()
+
+            loss_val += loss.data
+            acc_val += torch.sum(preds == labels.data)
+
+            del inputs, labels, outputs, preds
+            torch.cuda.empty_cache()
+
+        avg_loss_val = loss_val / len(validation_set)
+        avg_acc_val = acc_val / len(validation_set)
+
+        print()
+        print("Epoch {} result: ".format(epoch))
+        print("Avg loss (val): {:.4f}".format(avg_loss_val))
+        print("Avg acc (val): {:.4f}".format(avg_acc_val))
+        print('-' * 30)
+        print()
+
+        if avg_acc_val > best_acc:
+            best_acc = avg_acc_val
+            best_model_wts = copy.deepcopy(vgg.state_dict())
+
+    print("Best training acc: {:.4f}".format(best_acc))
+
+    vgg.load_state_dict(best_model_wts)
+    return vgg
 
 
-
-
-for epoch in range(5):
-    train(vgg16, optimizer_ft)
-    torch.save(vgg16, 'best#111.pb')
-test(vgg16)
-torch.save(vgg16, 'best#111.pb')
+print("Test before training")
+eval_model(vgg16, criterion)
+vgg16 = train_model(vgg16, criterion, optimizer_ft, exp_lr_scheduler, num_epochs=2)
+print("Test after training")
+eval_model(vgg16, criterion)
