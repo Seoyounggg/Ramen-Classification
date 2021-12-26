@@ -21,10 +21,13 @@ Test accuracy after the transfer learning.
 
 # Conclusion
 
-Our project was meaningful that we created our own image dataset and train a model with it.
-1. ImageFolder
--> When you want to load your custom dataset, you can use imagefolder function under torchvision.datasets.
-2. Transfer learning
--> Through transfer learning from VGG16 model, the model made a successful results with small amount of data. I only removed the last layer of the original model and added another layer to make the output into the size of four.
-3. Importance of the dataset
--> Even though the number of the dataset was not huge, the model had an accuracy of 99% on our dataset. The model itself might have learned well and made feature vectors nicely, but the high accuracy might indicate that the datasets used in training and testing might have been too similar. We tried our best to collect generalized dataset, but it might have not enough.
+Basic Classification was meaningful that we created our own image dataset and train a model with it.  
+
+**1. ImageFolder**
+* When you want to load your custom dataset, you can use imagefolder function under torchvision.datasets.  
+
+**2. Transfer learning**
+* Through transfer learning from VGG16 model, the model made a successful results with small amount of data. I only removed the last layer of the original model and added another layer to make the output into the size of four.  
+
+**3. Importance of the dataset**
+* Even though the number of the dataset was not huge, the model had an accuracy of 99% on our dataset. The model itself might have learned well and made feature vectors nicely, but the high accuracy might indicate that the datasets used in training and testing might have been too similar. We tried our best to collect generalized dataset, but it might have not enough.
