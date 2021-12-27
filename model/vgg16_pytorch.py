@@ -75,8 +75,7 @@ def eval_model(vgg, criterion):
     print('-' * 30)
 
     for i, data in enumerate(test_loader):
-        if i % 5 == 0:
-            print("\rTest batch {}/{}".format(i, test_batches), end='')
+        print("\rTest batch {}/{}".format(i, test_batches), end='')
 
         vgg.train(False)
         vgg.eval()
@@ -152,7 +151,7 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=2):
         vgg.eval()
 
         print()
-        print("Epoch {} result: ".format(epoch))
+        print("Epoch {} result: ".format(epoch+1))
         print("Avg loss (train): {:.4f}".format(avg_loss))
         print("Avg acc (train): {:.4f}".format(avg_acc))
         print('-' * 30)
@@ -186,7 +185,7 @@ def train_model(vgg, criterion, optimizer, scheduler, num_epochs=2):
         avg_acc_val = acc_val / len(validation_set)
 
         print()
-        print("Epoch {} result: ".format(epoch))
+        print("Epoch {} result: ".format(epoch+1))
         print("Avg loss (val): {:.4f}".format(avg_loss_val))
         print("Avg acc (val): {:.4f}".format(avg_acc_val))
         print('-' * 30)
