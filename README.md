@@ -1,4 +1,4 @@
-# Basic_Classification
+# Ramen Classification
 
 During the summer of 2018, I studied Deep Learning with a group of people from Kwangwoon University. We watched Deep Learning lectures from youtube by hunkim. During hunkim's lectures, the images that we used were mnist. To use the mnist, all we had to do was merely load images through importing datasets from PyTorch using datasets. So we did not have a chance to load images other than the mnist dataset.
 
