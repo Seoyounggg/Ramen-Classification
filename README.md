@@ -8,11 +8,15 @@ Each team member made their own model, and I made a model using a pre-trained VG
 
 # Experiments 
 
-Test accuracy before training the model.  
-(이미지)
+Test accuracy before training the model.
+
+
+<img width="200" alt="before_train" src="https://user-images.githubusercontent.com/42035101/147423778-02a8f063-c4d5-4b3c-9f9a-b0117fdcc56d.png">
 
 Test accuracy after the transfer learning.  
-(이미지)
+
+
+<img width="200" alt="after_train" src="https://user-images.githubusercontent.com/42035101/147423779-49965dd9-1899-4ead-bf85-bccc65b2c8c1.png">
 
 * Training the model with only two epochs was enough as its validation accuracy reached ~~.
 * The weight of the model was saved when the validation accuracy was the highest.
